@@ -111,6 +111,7 @@ class ConnectButton extends Component {
 }
 
 class PingButton extends Component {
+
     constructor(props) {
         super(props);
         this.type = props.type || 'ping';
@@ -123,7 +124,6 @@ class PingButton extends Component {
     componentWillUnmount() {
         this.unsubscribe();
     }
-
 
     handleClick = () => {
         store.dispatch(wsSend({"op": this.type}));
@@ -218,7 +218,7 @@ class SubNewBlocksButton extends Component {
         let disabled = !state.isConnected;
         let blocks;
         if (state.blocks_sub)
-            blocks = state.blocksCount ? <span><b>{state.blocksCount}</b>found </span> : "Waiting for new blocks...";
+            blocks = state.blocksCount ? <span><b>{state.blocksCount}</b> found </span> : "Waiting for new blocks...";
         return (
             <div>
                 <MuiThemeProvider theme={theme}>
@@ -234,20 +234,6 @@ class SubNewBlocksButton extends Component {
 }
 
 class SubAddressButton extends Component {
-    handleClick = () => {
-        if (!store.getState().addr_sub) {
-            store.dispatch(wsSend({"op": "addr_sub", "addr": this.state.address}));
-            store.dispatch({type: 'WEBSOCKET:addr_sub'});
-        } else {
-            store.dispatch(wsSend({"op": "addr_unsub", "addr": this.state.address}));
-            store.dispatch({type: 'WEBSOCKET:addr_unsub'});
-        }
-    };
-    handleChange = name => event => {
-        this.setState({
-            [name]: event.target.value,
-        });
-    };
 
     constructor(props) {
         super(props);
@@ -265,6 +251,22 @@ class SubAddressButton extends Component {
     componentWillUnmount() {
         this.unsubscribe();
     }
+
+    handleClick = () => {
+        if (!store.getState().addr_sub) {
+            store.dispatch(wsSend({"op": "addr_sub", "addr": this.state.address}));
+            store.dispatch({type: 'WEBSOCKET:addr_sub'});
+        } else {
+            store.dispatch(wsSend({"op": "addr_unsub", "addr": this.state.address}));
+            store.dispatch({type: 'WEBSOCKET:addr_unsub'});
+        }
+    };
+
+    handleChange = name => event => {
+        this.setState({
+            [name]: event.target.value,
+        });
+    };
 
     render() {
         let state = store.getState();
@@ -286,31 +288,17 @@ class SubAddressButton extends Component {
 }
 
 class LogArea extends Component {
-    scrollToBottom = () => {
-        if (this.log)
-            this.log.scrollTop = this.log.scrollHeight;
-    };
-
-    componentDidMount() {
-        this.unsubscribe = store.subscribe(() => {
-            this.forceUpdate()
-        });
-    }
-
-    clearLog = () => {
-        store.dispatch(wsClear());
-    };
-    toggleLog = () => {
-        store.dispatch({type: "WEBSOCKET:toggle_log"});
-    };
-    toggleLogScroll = () => {
-        store.dispatch({type: "WEBSOCKET:toggle_log_scroll"});
-    };
 
     constructor(props) {
         super(props);
         this.state = {date: new Date(), buttonState: true};
         this.messagesEnd = null;
+    }
+
+    componentDidMount() {
+        this.unsubscribe = store.subscribe(() => {
+            this.forceUpdate()
+        });
     }
 
     componentWillUnmount() {
@@ -321,6 +309,23 @@ class LogArea extends Component {
         if (store.getState().logAutoScroll)
             this.scrollToBottom();
     }
+
+    scrollToBottom = () => {
+        if (this.log)
+            this.log.scrollTop = this.log.scrollHeight;
+    };
+
+    clearLog = () => {
+        store.dispatch(wsClear());
+    };
+
+    toggleLog = () => {
+        store.dispatch({type: "WEBSOCKET:toggle_log"});
+    };
+
+    toggleLogScroll = () => {
+        store.dispatch({type: "WEBSOCKET:toggle_log_scroll"});
+    };
 
     render() {
         let state = store.getState();
