@@ -8,12 +8,16 @@ const websocketMiddleware = store => next => action => {
         case 'WEBSOCKET:CONNECT':
             // Configure the object
             websocket = new W3CWebSocket(action.payload.url);
+            let callback = action.payload.callback;
 
             // Attach the callbacks
-            websocket.onopen = () => store.dispatch({ type: 'WEBSOCKET:OPEN' });
-            websocket.onclose = (event) => store.dispatch({ type: 'WEBSOCKET:CLOSE', payload: event });
-            websocket.onmessage = (event) => store.dispatch({ type: 'WEBSOCKET:MESSAGE', payload: event });
-            websocket.onerror = (event) => store.dispatch({ type: 'WEBSOCKET:ERROR', payload: event });
+            websocket.onopen = () => {
+                store.dispatch({type: 'WEBSOCKET:OPEN'});
+                if (callback) callback();
+            };
+            websocket.onclose = (event) => store.dispatch({type: 'WEBSOCKET:CLOSE', payload: event});
+            websocket.onmessage = (event) => store.dispatch({type: 'WEBSOCKET:MESSAGE', payload: event});
+            websocket.onerror = (event) => store.dispatch({type: 'WEBSOCKET:ERROR', payload: event});
 
             break;
 
@@ -31,40 +35,11 @@ const websocketMiddleware = store => next => action => {
             websocket.close();
             break;
 
-        default: // We don't really need the default but ...
+        default:
             break;
     }
 
     return next(action);
 };
-// class Websocket {
-//
-//     constructor(){
-//         this.WSClient = new W3CWebSocket('wss://ws.blockchain.info/inv');
-//
-//         WSClient.onerror = function () {
-//             console.log('Connection Error');
-//         };
-//     }
-//
-//
-//
-//
-//         WSClient.onopen = function () {
-//             console.log('WebSocket Client Connected');
-//
-//         };
-//
-//         WSClient.onclose = function () {
-//             console.log('echo-protocol Client Closed');
-//         };
-//
-//         WSClient.onmessage = function (e) {
-//             if (typeof e.data === 'string') {
-//                 console.log("Received: '" + e.data + "'");
-//             }
-//         };
-//     });
-//     }
 
 export default websocketMiddleware;

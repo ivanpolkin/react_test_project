@@ -1,8 +1,8 @@
 // user actions
 
-export const connect = (url = 'wss://ws.blockchain.info/inv') => ({
+export const connect = (callback, url = 'wss://ws.blockchain.info/inv') => ({
     type: 'WEBSOCKET:CONNECT',
-    payload: {url}
+    payload: {url, callback}
 });
 
 export const disconnect = () => ({

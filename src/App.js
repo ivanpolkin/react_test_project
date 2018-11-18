@@ -7,25 +7,65 @@ import reducer from './reducer';
 import websocketMiddleware from './websocket';
 import {clear as wsClear, connect as wsConnect, disconnect as wsDisconnect, send as wsSend} from './actions'
 
+import blue from '@material-ui/core/colors/blue'
+import pink from '@material-ui/core/colors/pink'
+import Button from '@material-ui/core/Button';
+import {createMuiTheme, MuiThemeProvider} from '@material-ui/core/styles';
+import TextField from "@material-ui/core/TextField/TextField";
+
+
+const theme = createMuiTheme({
+    typography: {
+        useNextVariants: true,
+    },
+    palette: {
+        primary: {main: blue["500"]},
+        secondary: {main: pink["500"]},
+        // secondary: {main: red["500"]},
+    },
+    overrides: {
+        MuiButton: {
+            root: {
+                margin: "5px 5px 5px 0",
+            }
+        },
+        MuiFormControl: {
+            root: {
+                margin: "5px 5px 5px 0",
+            }
+        }
+    },
+});
+
 let initialState = {
     isConnected: false,
     isConnecting: false,
-    messages: []
+    messages: [],
+    transactionsSum: 0,
+    transactionsCount: 0,
+    unconfirmed_sub: false,
+    blocks_sub: false,
+    blocksCount: 0,
+    showLog: true,
+    logAutoScroll: true,
 };
 
 // store for websocket info and received messages
 const store = createStore(reducer, initialState, applyMiddleware(websocketMiddleware));
 
+// connect on load
+store.dispatch(wsConnect(() => {
+    store.dispatch(wsSend({"op": "unconfirmed_sub"}));
+    store.dispatch({type: 'WEBSOCKET:unconfirmed_sub'});
+    store.dispatch(wsSend({"op": "blocks_sub"}));
+    store.dispatch({type: 'WEBSOCKET:blocks_sub'});
+}));
+
 
 class ConnectButton extends Component {
 
-    // constructor(props) {
-    //     super(props);
-    // }
-
     componentDidMount() {
         this.unsubscribe = store.subscribe(() => {
-            console.log('forceUpdate');
             this.forceUpdate();
         });
     }
@@ -35,30 +75,17 @@ class ConnectButton extends Component {
     }
 
     connect = () => {
-        store.dispatch(wsConnect());
+        store.dispatch(wsConnect(() => {
+            store.dispatch(wsSend({"op": "unconfirmed_sub"}));
+            store.dispatch({type: 'WEBSOCKET:unconfirmed_sub'});
+            store.dispatch(wsSend({"op": "blocks_sub"}));
+            store.dispatch({type: 'WEBSOCKET:blocks_sub'});
+        }));
     };
 
     disconnect = () => {
         store.dispatch(wsDisconnect());
 
-    };
-
-    handleClick = () => {
-        // if (!this.state.connecting && !this.state.connected) {
-        //     this.setState({
-        //         connecting: true
-        //     });
-        //
-        //     this.connect();
-        // }
-
-        // this.setState({
-        //     buttonState: false
-        // });
-
-        // this.setState((state, props) => ({
-        //     buttonState: !state.buttonState
-        // }));
     };
 
     render() {
@@ -67,15 +94,17 @@ class ConnectButton extends Component {
 
         // conditional render to show user the state of connection
         if (state.isConnecting) {
-            button = <button disabled>Connecting...</button>
+            button = <Button variant="outlined" disabled>Connecting...</Button>
         } else if (state.isConnected) {
-            button = <button onClick={this.disconnect}>Disconnect</button>
+            button = <Button variant="outlined" color={"secondary"} onClick={this.disconnect}>Disconnect</Button>
         } else {
-            button = <button onClick={this.connect}>Connect</button>
+            button = <Button variant="outlined" color={"primary"} onClick={this.connect}>Connect</Button>
         }
         return (
             <div>
-                {button}
+                <MuiThemeProvider theme={theme}>
+                    {button}
+                </MuiThemeProvider>
             </div>
         );
     }
@@ -101,27 +130,24 @@ class PingButton extends Component {
     };
 
     render() {
+        let state = store.getState();
+        let disabled = !state.isConnected || (this.type !== 'ping' && (state.unconfirmed_sub || state.blocks_sub || state.addr_sub));
+
         return (
-            <div>
-                <button onClick={this.handleClick} disabled={!store.getState().isConnected}>
+            <MuiThemeProvider theme={theme}>
+                <Button id={this.type} variant={"outlined"} color={"primary"} onClick={this.handleClick}
+                        disabled={disabled}>
                     {this.type}
-                </button>
-            </div>
+                </Button>
+            </MuiThemeProvider>
         );
     }
 }
 
 class SubUnconfirmedButton extends Component {
-    constructor(props) {
-        super(props);
-        this.isSubscribed = false;
-    }
 
     componentDidMount() {
         this.unsubscribe = store.subscribe(() => {
-            if (!store.getState().isConnected) {
-                this.isSubscribed = false;
-            }
             this.forceUpdate()
         });
     }
@@ -131,36 +157,44 @@ class SubUnconfirmedButton extends Component {
     }
 
     handleClick = () => {
-        if (!this.isSubscribed) {
+        if (!store.getState().unconfirmed_sub) {
             store.dispatch(wsSend({"op": "unconfirmed_sub"}));
+            store.dispatch({type: 'WEBSOCKET:unconfirmed_sub'});
         } else {
             store.dispatch(wsSend({"op": "unconfirmed_unsub"}));
+            store.dispatch({type: 'WEBSOCKET:unconfirmed_unsub'});
         }
-        this.isSubscribed = !this.isSubscribed;
     };
 
     render() {
+        let state = store.getState();
+        let disabled = !state.isConnected || state.addr_sub;
+        let transactions;
+        if (state.transactionsCount)
+            transactions = <span
+                style={{fontSize: "18 !important"}}><b>{state.transactionsSum.toFixed(8)}</b> BTC in <b>{state.transactionsCount}</b> transactions</span>;
+        else if (state.unconfirmed_sub)
+            transactions = "Waiting for new transactions...";
+
         return (
             <div>
-                <button onClick={this.handleClick} disabled={!store.getState().isConnected}>
-                    {this.isSubscribed ? 'Unsubscribe from' : 'Subscribe to'} Unconfirmed transactions
-                </button>
+                <MuiThemeProvider theme={theme}>
+                    <Button id={this.type} variant={"outlined"} color={state.unconfirmed_sub ? "secondary" : "primary"}
+                            onClick={this.handleClick} disabled={disabled}>
+                        {state.unconfirmed_sub ? 'Unsubscribe from' : 'Subscribe to'} Unconfirmed transactions
+                    </Button>
+                </MuiThemeProvider>
+
+                <div style={{display: 'inline'}}>{transactions}</div>
             </div>
         );
     }
 }
 
 class SubNewBlocksButton extends Component {
-    constructor(props) {
-        super(props);
-        this.isSubscribed = false;
-    }
 
     componentDidMount() {
         this.unsubscribe = store.subscribe(() => {
-            if (!store.getState().isConnected) {
-                this.isSubscribed = false;
-            }
             this.forceUpdate()
         });
     }
@@ -170,36 +204,60 @@ class SubNewBlocksButton extends Component {
     }
 
     handleClick = () => {
-        if (!this.isSubscribed) {
+        if (!store.getState().blocks_sub) {
             store.dispatch(wsSend({"op": "blocks_sub"}));
+            store.dispatch({type: 'WEBSOCKET:blocks_sub'});
         } else {
             store.dispatch(wsSend({"op": "blocks_unsub"}));
+            store.dispatch({type: 'WEBSOCKET:blocks_unsub'});
         }
-        this.isSubscribed = !this.isSubscribed;
     };
 
     render() {
+        let state = store.getState();
+        let disabled = !state.isConnected;
+        let blocks;
+        if (state.blocks_sub)
+            blocks = state.blocksCount ? <span><b>{state.blocksCount}</b>found </span> : "Waiting for new blocks...";
         return (
             <div>
-                <button onClick={this.handleClick} disabled={!store.getState().isConnected}>
-                    {this.isSubscribed ? 'Unsubscribe from' : 'Subscribe to'} new Blocks
-                </button>
+                <MuiThemeProvider theme={theme}>
+                    <Button id={this.type} variant={"outlined"} color={state.blocks_sub ? "secondary" : "primary"}
+                            onClick={this.handleClick} disabled={disabled}>
+                        {state.blocks_sub ? 'Unsubscribe from' : 'Subscribe to'} new Blocks
+                    </Button>
+                </MuiThemeProvider>
+                <div style={{display: 'inline'}}>{blocks}</div>
             </div>
         );
     }
 }
 
 class SubAddressButton extends Component {
+    handleClick = () => {
+        if (!store.getState().addr_sub) {
+            store.dispatch(wsSend({"op": "addr_sub", "addr": this.state.address}));
+            store.dispatch({type: 'WEBSOCKET:addr_sub'});
+        } else {
+            store.dispatch(wsSend({"op": "addr_unsub", "addr": this.state.address}));
+            store.dispatch({type: 'WEBSOCKET:addr_unsub'});
+        }
+    };
+    handleChange = name => event => {
+        this.setState({
+            [name]: event.target.value,
+        });
+    };
+
     constructor(props) {
         super(props);
-        this.isSubscribed = false;
+        this.state = {
+            address: '3422VtS7UtCvXYxoXMVp6eZupR252z85oC'
+        };
     }
 
     componentDidMount() {
         this.unsubscribe = store.subscribe(() => {
-            if (!store.getState().isConnected) {
-                this.isSubscribed = false;
-            }
             this.forceUpdate()
         });
     }
@@ -208,35 +266,30 @@ class SubAddressButton extends Component {
         this.unsubscribe();
     }
 
-    handleClick = () => {
-        if (!this.isSubscribed) {
-            store.dispatch(wsSend({"op": "addr_sub", "addr": this.address.value}));
-            this.isSubscribed = true;
-        } else {
-            store.dispatch(wsSend({"op": "addr_unsub", "addr": this.address.value}));
-            this.isSubscribed = false;
-            // this.address.value = "";
-        }
-    };
-
     render() {
+        let state = store.getState();
+        let disabledButton = !state.isConnected || state.unconfirmed_sub;
+        let disabledInput = state.addr_sub || !state.isConnected || disabledButton;
         return (
             <div>
-                <input ref={(el) => this.address = el} disabled={this.isSubscribed || !store.getState().isConnected}
-                       value="3422VtS7UtCvXYxoXMVp6eZupR252z85oC"/>
-                <button onClick={this.handleClick} disabled={!store.getState().isConnected}>
-                    {this.isSubscribed ? 'Unsubscribe from' : 'Subscribe to'} address
-                </button>
+                <MuiThemeProvider theme={theme}>
+                    <TextField ref={(el) => this.address = el} disabled={disabledInput}
+                               value={this.state.address} onChange={this.handleChange('address')} style={{width: 310}}/>
+                    <Button id={this.type} variant={"outlined"} color={state.addr_sub ? "secondary" : "primary"}
+                            onClick={this.handleClick} disabled={disabledButton}>
+                        {state.addr_sub ? 'Unsubscribe from' : 'Subscribe to'} address
+                    </Button>
+                </MuiThemeProvider>
             </div>
         );
     }
 }
 
 class LogArea extends Component {
-    constructor(props) {
-        super(props);
-        this.state = {date: new Date(), buttonState: true};
-    }
+    scrollToBottom = () => {
+        if (this.log)
+            this.log.scrollTop = this.log.scrollHeight;
+    };
 
     componentDidMount() {
         this.unsubscribe = store.subscribe(() => {
@@ -244,37 +297,62 @@ class LogArea extends Component {
         });
     }
 
-    scrollToBottom = () => {
-        this.messagesEnd.scrollIntoView({behavior: "smooth"});
+    clearLog = () => {
+        store.dispatch(wsClear());
+    };
+    toggleLog = () => {
+        store.dispatch({type: "WEBSOCKET:toggle_log"});
+    };
+    toggleLogScroll = () => {
+        store.dispatch({type: "WEBSOCKET:toggle_log_scroll"});
     };
 
-    componentDidUpdate() {
-        this.scrollToBottom();
+    constructor(props) {
+        super(props);
+        this.state = {date: new Date(), buttonState: true};
+        this.messagesEnd = null;
     }
 
     componentWillUnmount() {
         this.unsubscribe();
     }
 
-    handleClick = () => {
-        store.dispatch(wsClear());
-    };
+    componentDidUpdate() {
+        if (store.getState().logAutoScroll)
+            this.scrollToBottom();
+    }
 
     render() {
-        let messages = [];
+        let state = store.getState();
 
-        for (var message of store.getState().messages || []) {
-            messages.push(<p style={{"overflowWrap": "break-word"}}>{message}</p>);
-        }
-
-        return (
-            <div>
-                <div id="log">
+        let log;
+        if (state.showLog) {
+            let storeMessages = state.messages;
+            let messages = [];
+            for (let i in storeMessages) {
+                let obj = storeMessages[i];
+                let key = obj[0];
+                let message = obj[1];
+                messages.push(<div key={key} style={{"overflowWrap": "break-word"}}>{message}<br/></div>);
+            }
+            log = <>
+                <div id="log" ref={(el) => this.log = el}>
                     {messages}
-                    <div ref={(el) => this.messagesEnd = el}/>
                 </div>
-                <button onClick={this.handleClick}>Clear log</button>
-            </div>
+                <Button variant={"outlined"} color={"secondary"} onClick={this.clearLog}>Clear log</Button>
+                <Button variant={"outlined"} color={state.logAutoScroll ? "secondary" : "primary"}
+                        onClick={this.toggleLogScroll}>
+                    Turn {state.logAutoScroll ? "off" : "on"} log auto scroll
+                </Button>
+            </>;
+        }
+        return (
+            <MuiThemeProvider theme={theme}>
+                <Button variant={"outlined"} color={state.showLog ? "secondary" : "primary"}
+                        onClick={this.toggleLog}>{state.showLog ? "Hide" : "Show"} log
+                </Button>
+                {log}
+            </MuiThemeProvider>
 
         );
     }
@@ -286,10 +364,12 @@ class App extends Component {
         return (
             <div className="App">
                 <header className="App-header">
-                    <ConnectButton/>
-                    <PingButton/>
-                    <PingButton type="ping_block"/>
-                    <PingButton type="ping_tx"/>
+                    <div style={{display: "inline-block"}}>
+                        <ConnectButton/>
+                        <PingButton/>
+                        <PingButton type="ping_block"/>
+                        <PingButton type="ping_tx"/>
+                    </div>
                     <SubUnconfirmedButton/>
                     <SubNewBlocksButton/>
                     <SubAddressButton/>
