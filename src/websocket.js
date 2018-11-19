@@ -1,28 +1,38 @@
+import {
+    WS_ADDR_SUB,
+    WS_ADDR_UNSUB,
+    WS_CLOSE,
+    WS_CONNECT,
+    WS_DISCONNECT,
+    WS_ERROR,
+    WS_MESSAGE,
+    WS_OPEN,
+    WS_SEND,
+    WS_TX_SUB,
+    WS_TX_UNSUB
+} from "./redux/actionTypes";
+
 var W3CWebSocket = require('websocket').w3cwebsocket;
 
 var websocket;
 
 const websocketMiddleware = store => next => action => {
     switch (action.type) {
-        // User request to connect
-        case 'WEBSOCKET:CONNECT':
-            // Configure the object
+        case WS_CONNECT:
             websocket = new W3CWebSocket(action.payload.url);
             let callback = action.payload.callback;
 
-            // Attach the callbacks
             websocket.onopen = () => {
-                store.dispatch({type: 'WEBSOCKET:OPEN'});
+                store.dispatch({type: WS_OPEN});
                 if (callback) callback();
             };
-            websocket.onclose = (event) => store.dispatch({type: 'WEBSOCKET:CLOSE', payload: event});
-            websocket.onmessage = (event) => store.dispatch({type: 'WEBSOCKET:MESSAGE', payload: event});
-            websocket.onerror = (event) => store.dispatch({type: 'WEBSOCKET:ERROR', payload: event});
+            websocket.onclose = (event) => store.dispatch({type: WS_CLOSE, payload: event});
+            websocket.onmessage = (event) => store.dispatch({type: WS_MESSAGE, payload: event});
+            websocket.onerror = (event) => store.dispatch({type: WS_ERROR, payload: event});
 
             break;
 
-        // User request to send a message
-        case 'WEBSOCKET:SEND':
+        case WS_SEND:
             if (websocket) {
                 websocket.send(JSON.stringify(action.payload));
             } else {
@@ -30,11 +40,22 @@ const websocketMiddleware = store => next => action => {
             }
             break;
 
-        // User request to disconnect
-        case 'WEBSOCKET:DISCONNECT':
+        case WS_DISCONNECT:
             websocket.close();
             break;
-
+        case WS_TX_SUB:
+            websocket.send('{"op": "unconfirmed_sub"}');
+            break;
+        case WS_TX_UNSUB:
+            websocket.send('{"op": "unconfirmed_unsub"}');
+            break;
+        case WS_ADDR_SUB:
+            console.log(action.payload);
+            websocket.send(JSON.stringify({"op": "addr_sub", "addr": action.payload.address}));
+            break;
+        case WS_ADDR_UNSUB:
+            websocket.send(JSON.stringify({"op": "addr_unsub", "addr": action.payload.address}));
+            break;
         default:
             break;
     }

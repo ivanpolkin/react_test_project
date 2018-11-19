@@ -1,4 +1,21 @@
 import uuidv4 from 'uuid/v4';
+import {
+    WS_ADDR_SUB,
+    WS_ADDR_UNSUB,
+    WS_BLOCK_SUB,
+    WS_BLOCK_UNSUB,
+    WS_CLOSE,
+    WS_CONNECT,
+    WS_DISCONNECT,
+    WS_ERROR,
+    WS_LOG_CLEAR,
+    WS_MESSAGE,
+    WS_OPEN,
+    WS_TOGGLE_LOG,
+    WS_TOGGLE_LOG_SCROLL,
+    WS_TX_SUB,
+    WS_TX_UNSUB
+} from "./actionTypes";
 
 function dateTimeToString(dt) {
     return dt.toLocaleString(undefined, {hour12: false}) + '.' + ('00' + dt.getMilliseconds()).slice(-3);
@@ -12,26 +29,35 @@ const reducer = (state = {}, action) => {
 
     var newState;
     switch (action.type) {
-        case 'WEBSOCKET:CONNECT':
+        case WS_CONNECT:
             newState = Object.assign({}, state, {
                 isConnecting: true,
             });
             return Object.assign({}, state, {
                 isConnecting: true,
             });
-        case 'WEBSOCKET:DISCONNECT':
+        case WS_DISCONNECT:
             return Object.assign({}, state, {
                 isConnecting: false,
                 isConnected: false
             });
-        case 'WEBSOCKET:OPEN':
+        case WS_OPEN:
             newState = Object.assign({}, state, {
                 isConnecting: false,
                 isConnected: true
             });
             newState.messages.push([uuidv4(), {type: 'conn', status: 'opened', time: dateTimeToString(new Date())}]);
             return newState;
-        case 'WEBSOCKET:CLOSE':
+        case WS_ERROR:
+            console.error(action.payload);
+            newState = Object.assign({}, state);
+            newState.messages.push([uuidv4(), {
+                type: 'conn',
+                status: 'error',
+                time: dateTimeToString(new Date())
+            }]);
+            return newState;
+        case WS_CLOSE:
             newState = Object.assign({}, state, {
                 isConnected: false,
                 isConnecting: false,
@@ -40,11 +66,11 @@ const reducer = (state = {}, action) => {
             });
             newState.messages.push([uuidv4(), {type: 'conn', status: 'closed', time: dateTimeToString(new Date())}]);
             return newState;
-        case 'WEBSOCKET:CLEAR':
+        case WS_LOG_CLEAR:
             return Object.assign({}, state, {
                 messages: []
             });
-        case 'WEBSOCKET:MESSAGE':
+        case WS_MESSAGE:
             newState = Object.assign({}, state);
             let data = JSON.parse(action.payload.data);
 
@@ -75,24 +101,24 @@ const reducer = (state = {}, action) => {
             transactionMessage['time'] = dateTimeToString(new Date());
             let uuid = uuidv4();
             newState.messages.push([uuid, transactionMessage]);
-            newState.messages = newState.messages.slice(-100); // limit log buffer
+            newState.messages = newState.messages.slice(-1000); // limit log buffer
 
             return newState;
-        case 'WEBSOCKET:unconfirmed_sub':
+        case WS_TX_SUB:
             return Object.assign({}, state, {transactionsSum: 0, transactionsCount: 0, unconfirmed_sub: true});
-        case 'WEBSOCKET:unconfirmed_unsub':
+        case WS_TX_UNSUB:
             return Object.assign({}, state, {unconfirmed_sub: false});
-        case 'WEBSOCKET:blocks_sub':
+        case WS_BLOCK_SUB:
             return Object.assign({}, state, {blocksCount: 0, blocks_sub: true});
-        case 'WEBSOCKET:blocks_unsub':
+        case WS_BLOCK_UNSUB:
             return Object.assign({}, state, {blocks_sub: false});
-        case 'WEBSOCKET:addr_sub':
+        case WS_ADDR_SUB:
             return Object.assign({}, state, {addr_sub: true});
-        case 'WEBSOCKET:addr_unsub':
+        case WS_ADDR_UNSUB:
             return Object.assign({}, state, {addr_sub: false});
-        case 'WEBSOCKET:toggle_log':
+        case WS_TOGGLE_LOG:
             return Object.assign({}, state, {showLog: !state.showLog});
-        case 'WEBSOCKET:toggle_log_scroll':
+        case WS_TOGGLE_LOG_SCROLL:
             return Object.assign({}, state, {logAutoScroll: !state.logAutoScroll});
         default:
             return state
