@@ -1,4 +1,8 @@
-import React from 'react';
+import uuidv4 from 'uuid/v4';
+
+function dateTimeToString(dt) {
+    return dt.toLocaleString(undefined, {hour12: false}) + '.' + ('00' + dt.getMilliseconds()).slice(-3);
+}
 
 const reducer = (state = {}, action) => {
     // debug
@@ -25,7 +29,7 @@ const reducer = (state = {}, action) => {
                 isConnecting: false,
                 isConnected: true
             });
-            newState.messages.push([new Date().getTime(), <b>Connection opened.<br/></b>]);
+            newState.messages.push([uuidv4(), {type: 'conn', status: 'opened', time: dateTimeToString(new Date())}]);
             return newState;
         case 'WEBSOCKET:CLOSE':
             newState = Object.assign({}, state, {
@@ -34,7 +38,7 @@ const reducer = (state = {}, action) => {
                 unconfirmed_sub: false,
                 blocks_sub: false,
             });
-            newState.messages.push([new Date().getTime(), <b>Connection closed.<br/></b>]);
+            newState.messages.push([uuidv4(), {type: 'conn', status: 'closed', time: dateTimeToString(new Date())}]);
             return newState;
         case 'WEBSOCKET:CLEAR':
             return Object.assign({}, state, {
@@ -50,37 +54,28 @@ const reducer = (state = {}, action) => {
                 let from = x.inputs.map((i) => {
                     return i.prev_out.addr;
                 });
-                let sum = 0;
+                let value = 0;
                 let to = x.out.map((i) => {
-                    sum += i.value / 100000000; // to BTC
+                    value += i.value / 100000000; // to BTC
                     return i.addr;
                 });
                 if (state.unconfirmed_sub) {
-                    newState.transactionsSum += sum;
+                    newState.transactionsSum += value;
                     newState.transactionsCount++;
                 }
-                let href1 = "https://www.blockchain.com/btc/tx/" + x.hash;
-                transactionMessage = <div>
-                    <b><a href={href1} target="_blank" rel="noopener noreferrer">Transaction</a> of {sum.toFixed(8)} BTC</b>
-                    {/*<div><b>Hash:</b> </div>*/}
-                    <div><b>From:</b> {from.join(', ')}</div>
-                    <div><b>To:</b> {to.join(', ')}</div>
-                </div>;
+                transactionMessage = {type: 'utx', from, to, hash: x.hash, value};
             } else if (data.op === 'block') {
                 let x = data.x;
                 let n = x.height;
                 newState.blocksCount++;
-                let href = "https://www.blockchain.com/btc/block/" + x.hash;
-                // let foundBy = <a href={x.foundBy.link} target="_blank">{x.foundBy.description}</a>;
-                transactionMessage = <div>
-                    <b>New Block <a href={href} target="_blank" rel="noopener noreferrer">#{n}</a></b> was found
-                </div>;
+                transactionMessage = {type: 'block', n, hash: x.hash}
             } else if (data.op === 'pong') {
-                transactionMessage = <b>pong<br/></b>;
+                transactionMessage = {type: 'pong'};
             }
-            let transactionUID = new Date().getTime();
-            newState.messages.push([transactionUID, transactionMessage]);
-            newState.messages = newState.messages.slice(-1000); // limit log buffer
+            transactionMessage['time'] = dateTimeToString(new Date());
+            let uuid = uuidv4();
+            newState.messages.push([uuid, transactionMessage]);
+            newState.messages = newState.messages.slice(-100); // limit log buffer
 
             return newState;
         case 'WEBSOCKET:unconfirmed_sub':

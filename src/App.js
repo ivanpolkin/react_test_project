@@ -292,7 +292,6 @@ class LogArea extends Component {
     constructor(props) {
         super(props);
         this.state = {date: new Date(), buttonState: true};
-        this.messagesEnd = null;
     }
 
     componentDidMount() {
@@ -337,8 +336,38 @@ class LogArea extends Component {
             for (let i in storeMessages) {
                 let obj = storeMessages[i];
                 let key = obj[0];
-                let message = obj[1];
-                messages.push(<div key={key} style={{"overflowWrap": "break-word"}}>{message}<br/></div>);
+                let msg = obj[1];
+
+                let messageElement;
+
+                if (msg.type === 'conn') {
+                    messageElement = <div><b>Connection {msg.status}.</b></div>
+                }
+                else if (msg.type === 'utx')
+                    messageElement = <div>
+                        <b>
+                            <a href={"https://www.blockchain.com/btc/tx/" + msg.hash} target="_blank"
+                               rel="noopener noreferrer">Transaction</a> of {msg.value.toFixed(8)} BTC
+                        </b>
+                        {/*<div><b>Hash:</b> </div>*/}
+                        <div><b>From:</b> {msg.from.join(', ')}</div>
+                        <div><b>To:</b> {msg.to.join(', ')}</div>
+                    </div>;
+                else if (msg.type === 'block') {
+                    messageElement = <div>
+                        <b>New Block
+                            <a href={"https://www.blockchain.com/btc/block/" + msg.hash} target="_blank"
+                               rel="noopener noreferrer">#{msg.n}</a>
+                        </b> was found
+                    </div>
+                } else if (msg.type === 'pong') {
+                    messageElement = <div><b>pong</b></div>
+                }
+                let time = msg.time;
+                messages.push(<div key={key} style={{"overflowWrap": "break-word"}}>
+                    <div>{time}</div>
+                    {messageElement}<br/>
+                </div>);
             }
             log = <>
                 <div id="log" ref={(el) => this.log = el}>
