@@ -12,6 +12,10 @@ class LogArea extends Component {
         this.props.wsClear();
     };
 
+    toggleLog = () => {
+        this.props.toggleLog();
+    };
+
     render() {
         let state = this.props;
 
