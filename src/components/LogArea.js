@@ -12,14 +12,6 @@ class LogArea extends Component {
         this.props.wsClear();
     };
 
-    toggleLog = () => {
-        this.props.toggleLog();
-    };
-
-    toggleLogScroll = () => {
-        this.props.toggleLogScroll();
-    };
-
     render() {
         let state = this.props;
 
@@ -29,10 +21,7 @@ class LogArea extends Component {
                 <LogContent/>
 
                 <Button variant={"outlined"} color={"secondary"} onClick={this.clearLog}>Clear log</Button>
-                <Button variant={"outlined"} color={state.logAutoScroll ? "secondary" : "primary"}
-                        onClick={this.toggleLogScroll}>
-                    Turn {state.logAutoScroll ? "off" : "on"} log auto scroll
-                </Button>
+
             </>;
         }
         return (
@@ -49,6 +38,7 @@ class LogArea extends Component {
 
 let mapStateToProps = state => {
     return {
+        messages: state.messages,
         showLog: state.showLog,
         logAutoScroll: state.logAutoScroll,
     }

@@ -3,7 +3,7 @@
 body {
     font-family: 'Roboto', sans-serif;
     color: rgba(0, 0, 0, 0.87);
-    margin: 5px;
+    margin: 10px;
     background-color: #eee;
 }
 
@@ -11,9 +11,151 @@ body {
     border: solid 1px #999;
     border-top-color: #ccc;
     border-left-color: #ccc;
-    padding: 5px;
+    padding: 10px;
     width: auto;
-    min-height: 50vh;
-    max-height: 50vh;
+    min-height: 65vh;
+    max-height: 65vh;
     overflow-y: scroll;
+}
+
+#log .message-container {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    align-items: start;
+}
+
+#log .message-container div {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    margin: 5px 0;
+}
+
+#log .message-container .icon {
+    align-items: center;
+}
+
+#log a {
+    color: #e91e63;
+}
+
+.divider {
+    width: 100%;
+}
+
+.App-header {
+    display: flex;
+    flex-flow: row wrap;
+    /*justify-content: space-between;*/
+}
+
+.connect-button {
+    min-width: 10em !important;
+}
+
+.transactions-button {
+    min-width: 28.1em !important;
+}
+
+.blocks-button {
+    min-width: 19.2em !important;
+}
+
+.counters {
+    display: flex;
+    flex-direction: column;
+}
+
+.counters b {
+    color: #e91e63;
+}
+
+.AppearTransition-appear {
+    opacity: 0.01;
+    transform: translateY(-100%);
+}
+
+.AppearTransition-appear.AppearTransition-appear-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: all 500ms ease-out;
+
+}
+
+.MessageAppearTransition-appear {
+    opacity: 0.01;
+    transform: translateY(-100%);
+}
+
+.MessageAppearTransition-appear.MessageAppearTransition-appear-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: all 100ms ease-out;
+
+}
+
+@media screen and (max-width: 992px) {
+    #log .message-container {
+        flex-direction: column;
+        align-items: normal;
+    }
+
+    #log .message-container .icon {
+        align-items: normal;
+    }
+
+    .divider {
+        width: 50%;
+        margin-left: 0;
+    }
+
+    .App-header {
+        flex-direction: column !important;
+    }
+
+    #log {
+        min-height: 50vh;
+        max-height: 50vh;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    #log .message-container {
+        flex-direction: column;
+        align-items: normal;
+    }
+
+    #log .message-container .icon {
+        align-items: normal;
+    }
+
+    .divider {
+        width: 100%;
+    }
+}
+
+@media screen and (max-width: 425px) {
+    * {
+        font-size: 13px;
+    }
+
+    .App-header button {
+        min-width: 0 !important;
+    }
+
+    #log {
+        min-height: 40vh;
+        max-height: 40vh;
+    }
+}
+
+@media screen and (max-width: 375px) {
+    * {
+        font-size: 11px;
+    }
+
+    .App-header button {
+        padding: 6px;
+    }
 }

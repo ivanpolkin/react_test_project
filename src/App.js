@@ -1,32 +1,54 @@
 import React, {Component} from 'react';
 import './App.css';
 import ConnectButton from "./components/ConnectButton";
-import SubAddressButton from "./components/SubAddressButton";
 import SubNewBlocksButton from "./components/SubNewBlocksButton";
-import PingButton from "./components/PingButton";
 import SubUnconfirmedButton from "./components/SubUnconfirmedButton";
 import LogArea from "./components/LogArea";
 
+import CSSTransition from 'react-addons-css-transition-group'
+import connect from "react-redux/es/connect/connect";
+import {clear as wsClear, toggleLog, toggleLogScroll} from "./redux/actions";
+import Counters from "./components/Counters";
 
 class App extends Component {
+    componentDidMount() {
+
+    }
+
     render() {
         return (
-            <div className="App">
-                <header className="App-header">
-                    <div style={{display: "inline-block"}}>
+            <CSSTransition
+                transitionName={"AppearTransition"}
+                transitionAppear={true}
+                transitionAppearTimeout={500}
+                transitionLeaveTimeout={0}
+                transitionEnterTimeout={0}
+
+            >
+                <div className="App">
+                    <b style={{fontSize: "20px", color: "#2196f3"}}>Blockchain online</b>
+                    <div className="App-header">
                         <ConnectButton/>
-                        <PingButton/>
-                        <PingButton type="ping_block"/>
-                        <PingButton type="ping_tx"/>
+                        <SubUnconfirmedButton/>
+                        <SubNewBlocksButton/>
                     </div>
-                    <SubUnconfirmedButton/>
-                    <SubNewBlocksButton/>
-                    <SubAddressButton/>
-                </header>
-                <LogArea/>
-            </div>
+                    <Counters/>
+                    <LogArea/>
+                </div>
+            </CSSTransition>
+
         );
     }
 }
 
-export default App;
+let mapStateToProps = state => {
+    return {
+        connectedBefore: state.connectedBefore
+    }
+};
+
+export default connect(
+    mapStateToProps,
+    {wsClear, toggleLog, toggleLogScroll}
+)(App);
+

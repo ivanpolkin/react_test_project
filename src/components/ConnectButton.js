@@ -20,17 +20,25 @@ class ConnectButton extends Component {
 
     render() {
         let button;
+        let metaColor;
 
         // conditional render to show user the state of connection
         if (this.props.isConnecting) {
-            button = <Button variant="outlined" disabled>Connecting...</Button>
+            button = <Button className={"connect-button"} variant="outlined" disabled>Connecting...</Button>;
+            metaColor = "#bdbdbd";
         } else if (this.props.isConnected) {
-            button = <Button variant="outlined" color={"secondary"} onClick={this.disconnect}>Disconnect</Button>
+            button = <Button className={"connect-button"} variant="outlined" color={"secondary"}
+                             onClick={this.disconnect}>Disconnect</Button>;
+            metaColor = "#2196f3";
         } else {
-            button = <Button variant="outlined" color={"primary"} onClick={this.connect}>Connect</Button>
+            button = <Button className={"connect-button"} variant="outlined" color={"primary"}
+                             onClick={this.connect}>Connect</Button>;
+            metaColor = "#e91e63";
         }
         return (
             <div>
+                <meta name="theme-color" content={metaColor}/>
+
                 <MuiThemeProvider theme={muiTheme}>
                     {button}
                 </MuiThemeProvider>

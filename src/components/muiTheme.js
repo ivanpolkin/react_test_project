@@ -9,7 +9,6 @@ export default createMuiTheme({
     palette: {
         primary: {main: blue["500"]},
         secondary: {main: pink["500"]},
-        // secondary: {main: red["500"]},
     },
     overrides: {
         MuiButton: {

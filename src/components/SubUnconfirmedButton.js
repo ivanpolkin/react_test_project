@@ -17,24 +17,17 @@ class SubUnconfirmedButton extends Component {
 
     render() {
         let disabled = !this.props.isConnected || this.props.addr_sub;
-        let transactions;
-        if (this.props.transactionsCount)
-            transactions = <span
-                style={{fontSize: "18 !important"}}><b>{this.props.transactionsSum.toFixed(8)}</b> BTC in <b>{this.props.transactionsCount}</b> transactions</span>;
-        else if (this.props.unconfirmed_sub)
-            transactions = "Waiting for new transactions...";
 
         return (
             <div>
                 <MuiThemeProvider theme={muiTheme}>
                     <Button id={this.type} variant={"outlined"}
+                            className={"transactions-button"}
                             color={this.props.unconfirmed_sub ? "secondary" : "primary"}
                             onClick={this.handleClick} disabled={disabled}>
                         {this.props.unconfirmed_sub ? 'Unsubscribe from' : 'Subscribe to'} Unconfirmed transactions
                     </Button>
                 </MuiThemeProvider>
-
-                <div style={{display: 'inline'}}>{transactions}</div>
             </div>
         );
     }
@@ -43,8 +36,6 @@ class SubUnconfirmedButton extends Component {
 let mapStateToProps = state => {
     return {
         isConnected: state.isConnected,
-        transactionsCount: state.transactionsCount,
-        transactionsSum: state.transactionsSum,
         unconfirmed_sub: state.unconfirmed_sub,
         addr_sub: state.addr_sub,
     }

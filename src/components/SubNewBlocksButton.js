@@ -17,19 +17,18 @@ class SubNewBlocksButton extends Component {
 
     render() {
         let disabled = !this.props.isConnected;
-        let blocks;
-        if (this.props.blocks_sub)
-            blocks = this.props.blocksCount ?
-                <span><b>{this.props.blocksCount}</b> found </span> : "Waiting for new blocks...";
+
         return (
             <div>
                 <MuiThemeProvider theme={muiTheme}>
-                    <Button id={this.type} variant={"outlined"} color={this.props.blocks_sub ? "secondary" : "primary"}
+                    <Button id={this.type}
+                            className={"blocks-button"}
+                            variant={"outlined"}
+                            color={this.props.blocks_sub ? "secondary" : "primary"}
                             onClick={this.handleClick} disabled={disabled}>
                         {this.props.blocks_sub ? 'Unsubscribe from' : 'Subscribe to'} new Blocks
                     </Button>
                 </MuiThemeProvider>
-                <div style={{display: 'inline'}}>{blocks}</div>
             </div>
         );
     }
@@ -39,7 +38,6 @@ let mapStateToProps = state => {
     return {
         isConnected: state.isConnected,
         blocks_sub: state.blocks_sub,
-        blocksCount: state.blocksCount,
     }
 };
 

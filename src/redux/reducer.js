@@ -46,7 +46,6 @@ const reducer = (state = {}, action) => {
                 isConnecting: false,
                 isConnected: true
             });
-            newState.messages.push([uuidv4(), {type: 'conn', status: 'opened', time: dateTimeToString(new Date())}]);
             return newState;
         case WS_ERROR:
             console.error(action.payload);
@@ -64,7 +63,6 @@ const reducer = (state = {}, action) => {
                 unconfirmed_sub: false,
                 blocks_sub: false,
             });
-            newState.messages.push([uuidv4(), {type: 'conn', status: 'closed', time: dateTimeToString(new Date())}]);
             return newState;
         case WS_LOG_CLEAR:
             return Object.assign({}, state, {
@@ -101,7 +99,7 @@ const reducer = (state = {}, action) => {
             transactionMessage['time'] = dateTimeToString(new Date());
             let uuid = uuidv4();
             newState.messages.push([uuid, transactionMessage]);
-            newState.messages = newState.messages.slice(-1000); // limit log buffer
+            newState.messages = newState.messages.slice(-100); // limit log buffer
 
             return newState;
         case WS_TX_SUB:

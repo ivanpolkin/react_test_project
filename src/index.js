@@ -4,14 +4,16 @@ import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
 import {Provider} from "react-redux";
-import {blockSub, connect as wsConnect, txSub} from "./redux/actions";
 import store from './redux/store'
 
+import {blockSub, connect as wsConnect, txSub} from "./redux/actions";
 // connect on load
-store.dispatch(wsConnect(() => {
-    store.dispatch(txSub());
-    store.dispatch(blockSub());
-}));
+setTimeout(function () {
+    store.dispatch(wsConnect(() => {
+        store.dispatch(txSub());
+        store.dispatch(blockSub());
+    }));
+}, 500);
 
 
 ReactDOM.render(

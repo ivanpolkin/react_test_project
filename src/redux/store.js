@@ -11,7 +11,7 @@ let initialState = {
     unconfirmed_sub: false,
     blocks_sub: false,
     blocksCount: 0,
-    showLog: true,
+    showLog: false,
     logAutoScroll: true,
 };
 
