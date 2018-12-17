@@ -1,6 +1,8 @@
 import {
     WS_ADDR_SUB,
     WS_ADDR_UNSUB,
+    WS_BLOCK_SUB,
+    WS_BLOCK_UNSUB,
     WS_CLOSE,
     WS_CONNECT,
     WS_DISCONNECT,
@@ -15,6 +17,7 @@ import {
 var W3CWebSocket = require('websocket').w3cwebsocket;
 
 var websocket;
+var connectionAttempts = 0;
 
 const websocketMiddleware = store => next => action => {
     switch (action.type) {
@@ -23,10 +26,31 @@ const websocketMiddleware = store => next => action => {
             let callback = action.payload.callback;
 
             websocket.onopen = () => {
+                connectionAttempts = 0;
                 store.dispatch({type: WS_OPEN});
                 if (callback) callback();
             };
-            websocket.onclose = (event) => store.dispatch({type: WS_CLOSE, payload: event});
+            websocket.onclose = (event) => {
+                if (!event.wasClean) {
+                    if (connectionAttempts < 10) {
+                        connectionAttempts++;
+                        setTimeout(() => {
+                            store.dispatch({
+                                type: WS_CONNECT, payload: {
+                                    url: event.currentTarget.url,
+                                    callback: () => {
+                                        store.dispatch({type: WS_TX_SUB, payload: event, noCountersReset: true});
+                                        store.dispatch({type: WS_BLOCK_SUB, payload: event, noCountersReset: true});
+                                    }
+                                }
+                            });
+                        }, 1000);
+                    } else {
+                        connectionAttempts = 0;
+                    }
+                }
+                store.dispatch({type: WS_CLOSE, payload: event, connectionAttempts});
+            };
             websocket.onmessage = (event) => store.dispatch({type: WS_MESSAGE, payload: event});
             websocket.onerror = (event) => store.dispatch({type: WS_ERROR, payload: event});
 
@@ -48,6 +72,12 @@ const websocketMiddleware = store => next => action => {
             break;
         case WS_TX_UNSUB:
             websocket.send('{"op": "unconfirmed_unsub"}');
+            break;
+        case WS_BLOCK_SUB:
+            websocket.send('{"op": "blocks_sub"}');
+            break;
+        case WS_BLOCK_UNSUB:
+            websocket.send('{"op": "blocks_unsub"}');
             break;
         case WS_ADDR_SUB:
             console.log(action.payload);

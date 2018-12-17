@@ -59,7 +59,7 @@ const reducer = (state = {}, action) => {
         case WS_CLOSE:
             newState = Object.assign({}, state, {
                 isConnected: false,
-                isConnecting: false,
+                isConnecting: action.connectionAttempts,
                 unconfirmed_sub: false,
                 blocks_sub: false,
             });
@@ -103,11 +103,17 @@ const reducer = (state = {}, action) => {
 
             return newState;
         case WS_TX_SUB:
-            return Object.assign({}, state, {transactionsSum: 0, transactionsCount: 0, unconfirmed_sub: true});
+            if (action.noCountersReset)
+                return Object.assign({}, state, {unconfirmed_sub: true});
+            else
+                return Object.assign({}, state, {transactionsSum: 0, transactionsCount: 0, unconfirmed_sub: true});
         case WS_TX_UNSUB:
             return Object.assign({}, state, {unconfirmed_sub: false});
         case WS_BLOCK_SUB:
-            return Object.assign({}, state, {blocksCount: 0, blocks_sub: true});
+            if (action.noCountersReset)
+                return Object.assign({}, state, {blocks_sub: true});
+            else
+                return Object.assign({}, state, {blocksCount: 0, blocks_sub: true});
         case WS_BLOCK_UNSUB:
             return Object.assign({}, state, {blocks_sub: false});
         case WS_ADDR_SUB:
